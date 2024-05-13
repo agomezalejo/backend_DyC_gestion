@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
   const { usuario, nombre, apellido, email, contraseña } = req.body;
   try {
     const hashContraseña = await bcrypt.hash(contraseña, 10);
-    const nuevoUsuario = await Usuario.create({ usuario, nombre, apellido, email, contraseña:hashContraseña });
+    const nuevoUsuario = await Usuario.create({ nombre_usuario:usuario, nombre, apellido, email, contraseña:hashContraseña });
     res.status(201).json(nuevoUsuario);
   } catch (error) {
     console.error(error);
