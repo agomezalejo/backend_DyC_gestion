@@ -6,7 +6,7 @@ const Sequelize = require('sequelize');
 const process = require('process');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
+const config = require(__dirname + '/../config/config.json')[env] || process.env.CONFIGBD;
 const db = {};
 
 // let sequelize;
@@ -19,7 +19,7 @@ const db = {};
 let sequelize;
 
 if (process.env.NODE_ENV === 'production') {
-  sequelize = new Sequelize(config.DATABASE_URL, config);
+  sequelize = new Sequelize(config.database, config.username, config.password, config);
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
