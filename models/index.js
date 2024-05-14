@@ -6,20 +6,20 @@ const Sequelize = require('sequelize');
 const process = require('process');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
-const config = process.env.CONFIGBD || require(__dirname + '/../config/config.json')[env];
+const config = require(__dirname + '/../config/config.json')[env];
 const db = {};
-
-// let sequelize;
-// if (config.use_env_variable) {
-//   sequelize = new Sequelize(process.env[config.use_env_variable], config);
-// } else {
-//   sequelize = new Sequelize(config.database, config.username, config.password, config);
-// }
 
 let sequelize;
 
 if (process.env.NODE_ENV === 'production') {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
+  let database = process.env.DATABASE || config.database;
+  let username = process.env.USERBD || config.username;
+  let password = process.env.PASSBD || config.password;
+  sequelize = new Sequelize(database, username, password, {
+    host: process.env.HOSTBD|| config.host,
+    dialect: process.env.DIALECTBD || config.dialect,
+    port: process.env.PORTBD || config.port
+  });
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
