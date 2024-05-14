@@ -4,10 +4,10 @@ const Usuario = require('../models').usuario;
 const bcrypt = require('bcrypt');
 
 
-router.post('/login', async (req, res) => {
+router.post('/', async (req, res) => {
     const { usuario, contraseña } = req.body;
     try {
-      const objUsuario = await Usuario.findOne({ where: { usuario } });
+      const objUsuario = await Usuario.findOne({ where: { nombre_usuario:usuario } });
       if (!objUsuario) {
         return res.status(401).json({ message: 'Credenciales incorrectas' });
       }
