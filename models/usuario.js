@@ -2,13 +2,17 @@
 const {
   Model
 } = require('sequelize');
+
+const Gastos = require('../models').gasto;
+
 module.exports = (sequelize, DataTypes) => {
-  class Usuario extends Model {
+  class Usuarios extends Model {
 
     static associate(models) {
+      Usuarios.belongsToMany(Gastos, { through: 'UsuarioGasto' });
     }
   }
-  Usuario.init({
+  Usuarios.init({
     nombre_usuario: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -35,8 +39,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
     sequelize,
-    modelName: 'usuario',
+    modelName: 'usuarios',
     timestamps: false
   });
-  return Usuario;
+  return Usuarios;
 };
