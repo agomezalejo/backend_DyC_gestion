@@ -97,6 +97,7 @@ const updateGrupo = async (req, res) => {
 
 const addIntegranteByToken = async (req, res) => {
     const { token } = req.params;
+    const idUsuario = req.usuario.id;
     const { ids_usuarios } = req.body;
     
     try {
@@ -104,17 +105,25 @@ const addIntegranteByToken = async (req, res) => {
       if (!grupo) {
         return res.status(404).json({ error: 'Grupo no encontrado' });
       }
-      for (const idUsuario of ids_usuarios) {
-          const usuario = await Usuario.findByPk(idUsuario);
-          if (!usuario) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
-          }
-          
-          const existeRelacion = await GrupoUsuario.findOne({ where: { id_grupo: grupo.id, id_usuario: idUsuario } });
-          if (existeRelacion) {
-            continue;
-          }
-          await GrupoUsuario.create({ id_grupo: grupo.id, id_usuario: idUsuario });
+      if(ids_usuarios && ids_usuarios.length > 0){
+        for (const idUsuario of ids_usuarios) {
+            const usuario = await Usuario.findByPk(idUsuario);
+            if (!usuario) {
+              return res.status(404).json({ error: 'Usuario no encontrado' });
+            }
+            
+            const existeRelacion = await GrupoUsuario.findOne({ where: { id_grupo: grupo.id, id_usuario: idUsuario } });
+            if (existeRelacion) {
+              continue;
+            }
+            await GrupoUsuario.create({ id_grupo: grupo.id, id_usuario: idUsuario });
+        }
+      }else{
+        const existeRelacion = await GrupoUsuario.findOne({ where: { id_grupo: grupo.id, id_usuario: idUsuario } });
+        if (existeRelacion) {
+          return res.status(400).json({ error: 'El usuario ya pertenece al grupo' });
+        }
+        await GrupoUsuario.create({ id_grupo: grupo.id, id_usuario: idUsuario });
       }
   
       
