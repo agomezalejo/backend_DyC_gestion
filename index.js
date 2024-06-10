@@ -29,6 +29,11 @@ app.use(fileUpload({
   
 app.use(helmet());
 
+// Configurar asociaciones
+// Usuario.associate({ Gasto, GastoUsuario });
+// Gasto.associate({ Usuario, GastoUsuario });
+
+// Sincronizar la base de datos
 sequelize.sync({ force: false })
   .then(() => {
     console.log('Base de datos sincronizada');

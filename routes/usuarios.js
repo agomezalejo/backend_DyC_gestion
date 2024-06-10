@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const Usuarios = require('../models').usuario;
+const Usuarios = require('../models').Usuario;
 const bcrypt = require('bcrypt');
+const authenticateToken = require('../middlewares/verificarToken');
 
-router.get('/', async (req, res) => {
+router.get('/',[authenticateToken], async (req, res) => {
     const page = parseInt(req.query.page) || 1; 
     const limit = parseInt(req.query.limit) || 20; 
   
@@ -30,7 +31,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id',[authenticateToken], async (req, res) => {
   const { id } = req.params;
   try {
     const usuario = await Usuarios.findByPk(id);
@@ -57,7 +58,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id',[authenticateToken], async (req, res) => {
     const { id } = req.params;
     const { usuario, nombre, apellido, email, contraseña } = req.body;
     try {
@@ -83,7 +84,7 @@ router.put('/:id', async (req, res) => {
     }
   });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',[authenticateToken] , async (req, res) => {
   const { id } = req.params;
   try {
     const usuario = await Usuarios.findByPk(id);

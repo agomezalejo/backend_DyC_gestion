@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('gastos', {
+    await queryInterface.createTable('tags', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -12,31 +12,17 @@ module.exports = {
       },
       nombre: {
         type: Sequelize.STRING,
+        allowNull: false
       },
       descripcion: {
         type: Sequelize.STRING,
       },
-      monto: {
-        type: Sequelize.DECIMAL(12, 2),
-      },
-      monto_pagado: {
-        type: Sequelize.DECIMAL(12, 2),
-      },
-      metodo_pago: {
+      color: {
         type: Sequelize.STRING,
-      },
-      tipo: {
-        type: Sequelize.STRING,
-      },
-      liquidacion: {
-        type: Sequelize.STRING,
-      },
-      fecha: {
-        type: Sequelize.DATE,
       }
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('gastos');
+    await queryInterface.dropTable('tags');
   }
 };

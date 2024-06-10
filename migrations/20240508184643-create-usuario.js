@@ -23,6 +23,9 @@ module.exports = {
       },
       contraseña: {
         type: Sequelize.STRING
+      },
+      saldo: {
+        type: Sequelize.DECIMAL(12, 2)
       }
     });
   },

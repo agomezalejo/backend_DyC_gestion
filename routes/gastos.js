@@ -1,55 +1,19 @@
 const express = require("express");
+const authenticateToken = require("../middlewares/verificarToken");
 const router = express.Router();
-const Gastos = require("../models").gasto;
-const Usuarios = require("../models").usuario;
+const Gastos = require("../models").Gasto;
+const { post_gasto_casual, post_gasto_fijo, 
+  getGastosPropios, getGastosPropiosGrupos, getGastosGrupo, 
+  post_gasto_fijo_grupo,
+  post_gasto_casual_grupo} = require("../Controllers/gastosController");
 
-router.get("/:id_usuario", async (req, res) => {
-  const idUsuario = req.params.id_usuario;
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 20;
+router.get('/propios', [authenticateToken], getGastosPropios);
 
-  const offset = (page - 1) * limit;
+router.get("/perfil/grupos",[authenticateToken] , getGastosPropiosGrupos);
 
-  try {
-    const usuario = await Usuarios.findByPk(idUsuario);
-    if (!usuario) {
-      res.status(400).json({
-        error: `No se encontro el usuario con el id: ${idUsuario}`,
-      });
-      return;
-    }
+router.get("/grupo/:idGrupo",[authenticateToken] , getGastosGrupo)
 
-    const gastos = await usuario.getGastos({
-      offset: offset,
-      limit: tamanoPagina,
-      include: [
-        {
-          model: Usuarios,
-          as: "Usuarios",
-          attributes: [],
-          through: {
-            attributes: [],
-          },
-        },
-      ],
-    });
-
-    const count = await gastos.length;
-    const totalPages = Math.ceil(count / limit);
-
-    res.json({
-      totalGastos: count,
-      totalPages,
-      currentPage: page,
-      gastos,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error interno del servidor" });
-  }
-});
-
-router.get("/:id", async (req, res) => {
+router.get("/:id",[authenticateToken] , async (req, res) => {
   const { id } = req.params;
   try {
     const gasto = await Gastos.findByPk(id);
@@ -64,50 +28,15 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
-  const {
-    id,
-    nombre,
-    monto,
-    fecha,
-    categoria,
-    tipo,
-    metodo_pago,
-    nota,
-    etiquetas,
-    liquidacion,
-  } = req.body;
-  try {
+router.post('/casual',[authenticateToken] , post_gasto_casual);
 
-    const usuario = await Usuarios.findByPk(id);
-    if (!usuario) {
-      res.status(400).json({
-        error: `No se encontro el usuario con el id: ${id}`,
-      });
-      return;
-    }
+router.post('/fijo',[authenticateToken] , post_gasto_fijo);
 
-    const nuevoGasto = await Usuarios.create({
-      nombre,
-      monto,
-      fecha,
-      categoria,
-      tipo,
-      metodo_pago,
-      nota,
-      etiquetas,
-      liquidacion,
-    });
-    await usuario.addGastos(gasto);
+router.post('/casual/grupo/:idGrupo',[authenticateToken] , post_gasto_casual_grupo);
 
-    res.status(201).json(nuevoGasto);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error interno del servidor" });
-  }
-});
+router.post('/fijo/grupo/:idGrupo',[authenticateToken] , post_gasto_fijo_grupo);
 
-router.put("/:id", async (req, res) => {
+router.put("/:id",[authenticateToken] , async (req, res) => {
   const { id } = req.params;
   const {
     nombre,
@@ -147,7 +76,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',[authenticateToken] ,async (req, res) => {
     const { id } = req.params;
     try {
       const gasto = await Gastos.findByPk(id);
