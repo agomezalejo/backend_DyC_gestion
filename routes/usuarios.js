@@ -31,6 +31,19 @@ router.get('/',[authenticateToken], async (req, res) => {
     }
 });
 
+router.get('/mis-datos',[authenticateToken], async (req, res) => {
+  const id = req.usuario.id;
+
+  try {
+    const usuario = await Usuarios.findByPk(id);
+
+    res.json(usuario);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 router.get('/:id',[authenticateToken], async (req, res) => {
   const { id } = req.params;
   try {
