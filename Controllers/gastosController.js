@@ -310,7 +310,7 @@ const post_gasto_casual_grupo = async (req, res) => {
       }else{
         usuariosV = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }]
       }
-      let Objresp =calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
+      let Objresp =await calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
       if(!Objresp.ok){
         res.status(400).json({ error: Objresp.mensaje });
         return
@@ -329,7 +329,7 @@ const post_gasto_casual_grupo = async (req, res) => {
         id_grupo
       }
 
-      let nuevoGasto = await crear_gasto_casual(constructor_gasto, tagsValidated, usuarios, integrantes)
+      let nuevoGasto = await crear_gasto_casual(constructor_gasto, tagsValidated, usuariosV, integrantes)
   
       res.status(201).json({mensaje: "Gasto creado correctamente", gasto:nuevoGasto});
   } catch (error) {
@@ -361,7 +361,7 @@ const post_gasto_fijo_grupo = async (req, res) => {
         usuariosV = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }]
       }
 
-      let Objresp = calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
+      let Objresp = await calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
       if(!Objresp.ok){
           res.status(400).json({ error: Objresp.mensaje });
           return
@@ -379,7 +379,7 @@ const post_gasto_fijo_grupo = async (req, res) => {
 
       let constructor_fijo = { frecuencia:frecuencia_transformada, proxima_fecha }
 
-      let {fijo, nuevoGasto} = await crear_gasto_y_fijo(constructor_gasto, tagsValidated, constructor_fijo, usuarios, integrantes)
+      let {fijo, nuevoGasto} = await crear_gasto_y_fijo(constructor_gasto, tagsValidated, constructor_fijo, usuariosV, integrantes)
       let fechas_para_crear = calcular_proximos_fijos(proxima_fecha, unit_time)
 
       await crear_proximos_fijos(constructor_gasto, tagsValidated, fechas_para_crear, constructor_fijo, fijo, unit_time, [])

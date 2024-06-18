@@ -5,6 +5,7 @@ const GastoFijo = require("../models").GastoFijo;
 const GastoTag = require("../models").GastoTag;
 const GrupoUsuario = require("../models").GrupoUsuario;
 const moment = require('moment');
+const { traer_integrantes_de_grupo } = require("./gruposHelper");
 
 const mergear_integrantes = async(usuarios, id_grupo) => {
     let integrantes = await traer_integrantes_de_grupo(id_grupo)
@@ -35,13 +36,13 @@ const calcular_liquidacion = (usuarios, monto) => {
     return {ok: true, liquidacion, pagado};
 }
 
-const calulos_y_validaciones = (monto, usuarios, fecha, id_categoria, tags, id_grupo=null) => {
+const calulos_y_validaciones = async(monto, usuarios, fecha, id_categoria, tags, id_grupo=null) => {
     
     let ok = true;
 
     let integrantes = [] 
     if(id_grupo){
-        integrantes = mergear_integrantes(usuarios, id_grupo);
+        integrantes = await mergear_integrantes(usuarios, id_grupo);
     }
     
     let resp = calcular_liquidacion(usuarios, monto);
@@ -145,7 +146,11 @@ const crear_gasto_casual = async (constructor_gasto, tags, usuarios_gastos, inte
                     id_usuario: integrante.id
                 }
             });
-            grupo_usuario.balance += integrante.monto_pagado - gasto_por_persona;
+            if(!grupo_usuario){
+                continue;
+            }
+            let nuevo_balance = (parseFloat(grupo_usuario.balance) + parseFloat(integrante.monto_pagado) - gasto_por_persona).toFixed(2);
+            grupo_usuario.balance = nuevo_balance;
             await grupo_usuario.save();
         }
     }
@@ -179,17 +184,6 @@ const crear_gasto_y_fijo = async (constructor_gasto, tags, constructor_fijo, usu
         metodo_pago: usuario.metodo_pago
         });
 
-        if(nuevoGasto.liquidacion === 'PAGADO' && nuevoGasto.id_grupo){
-            let grupo_usuario = await GrupoUsuario.findOne({
-                where:{
-                    id_grupo: nuevoGasto.id_grupo,
-                    id_usuario: usuario.id
-                }
-            });
-            grupo_usuario.balance -= usuario.monto_pagado;
-            await grupo_usuario.save();
-        }
-
     }
 
     if(nuevoGasto.liquidacion === 'PAGADO' && nuevoGasto.id_grupo){
@@ -201,7 +195,11 @@ const crear_gasto_y_fijo = async (constructor_gasto, tags, constructor_fijo, usu
                     id_usuario: integrante.id
                 }
             });
-            grupo_usuario.balance += integrante.monto_pagado - gasto_por_persona;
+            if(!grupo_usuario){
+                continue;
+            }
+            let nuevo_balance = (parseFloat(grupo_usuario.balance) + parseFloat(integrante.monto_pagado) - gasto_por_persona).toFixed(2);
+            grupo_usuario.balance = nuevo_balance;
             await grupo_usuario.save();
         }
     }
