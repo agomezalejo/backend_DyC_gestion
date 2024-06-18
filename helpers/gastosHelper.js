@@ -231,6 +231,7 @@ module.exports = {
     crear_gasto_y_fijo,
     crear_proximos_fijos,
     tranformar_frecuencia,
-    calcular_proximos_fijos
+    calcular_proximos_fijos,
+    mergear_integrantes
 
 }

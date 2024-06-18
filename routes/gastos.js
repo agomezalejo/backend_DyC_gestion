@@ -5,7 +5,8 @@ const Gastos = require("../models").Gasto;
 const { post_gasto_casual, post_gasto_fijo, 
   getGastosPropios, getGastosPropiosGrupos, getGastosGrupo, 
   post_gasto_fijo_grupo,
-  post_gasto_casual_grupo} = require("../Controllers/gastosController");
+  post_gasto_casual_grupo,
+  postPagarGasto} = require("../Controllers/gastosController");
 
 router.get('/propios', [authenticateToken], getGastosPropios);
 
@@ -27,6 +28,8 @@ router.get("/:id",[authenticateToken] , async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
+
+router.post("/pagar/:id",[authenticateToken] , postPagarGasto);
 
 router.post('/casual',[authenticateToken] , post_gasto_casual);
 

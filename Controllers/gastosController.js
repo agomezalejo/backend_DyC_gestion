@@ -11,7 +11,8 @@ const GastoUsuario = require("../models").GastoUsuario;
 const moment = require('moment');
 const { crear_gasto_y_fijo, tranformar_frecuencia, 
   calcular_proximos_fijos, calulos_y_validaciones, crear_proximos_fijos, 
-  crear_gasto_casual} = require("../helpers/gastosHelper");
+  crear_gasto_casual,
+  mergear_integrantes} = require("../helpers/gastosHelper");
 
 const getGastosPropios = async (req, res) => {
     const idUsuario = req.usuario.id;
@@ -50,7 +51,8 @@ const getGastosPropios = async (req, res) => {
         where: {
           fecha: {
             [Op.between]: [inicio.toDate(), fin.toDate()]
-          }
+          },
+          id_grupo: null 
         },
         limit: limit,
         offset: offset
@@ -69,6 +71,7 @@ const getGastosPropios = async (req, res) => {
       res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
+
 
 const getGastosPropiosGrupos = async (req, res) => {
   const idUsuario = req.usuario.id;
@@ -308,7 +311,9 @@ const post_gasto_casual_grupo = async (req, res) => {
       if(usuarios && usuarios.length > 0){
         usuariosV = [...usuarios];
       }else{
-        usuariosV = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }]
+        if(saldado){
+          usuariosV = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }]
+        }
       }
       let Objresp =await calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
       if(!Objresp.ok){
@@ -358,7 +363,9 @@ const post_gasto_fijo_grupo = async (req, res) => {
       if(usuarios && usuarios.length > 0){
         usuariosV = [...usuarios];
       }else{
-        usuariosV = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }]
+        if(saldado){
+          usuariosV = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }]
+        }
       }
 
       let Objresp = await calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
@@ -392,11 +399,60 @@ const post_gasto_fijo_grupo = async (req, res) => {
   
 }
 
+const postPagarGasto = async (req, res) => {
+    const idGasto = req.params.id;
+    const usuarioActual = req.usuario;
+  
+    try {
+      const gasto = await Gastos.findByPk(idGasto);
+  
+      if (!gasto) {
+        return res.status(404).json({ error: 'Gasto no encontrado' });
+      }
+
+      gasto.liquidacion = 'PAGADO';
+      gasto.monto_pagado = gasto.monto;
+      await gasto.save();
+  
+      await GastoUsuario.create({
+          id_gasto: idGasto,
+          id_usuario: usuarioActual.id,
+          monto_pagado: gasto.monto,
+          metodo_pago:  'EFECTIVO'
+      });
+      if(gasto.id_grupo){
+          let usuarios = [{ id: usuarioActual.id, monto_pagado: gasto.monto, metodo_pago: 'EFECTIVO' }]; 
+          let integrantes = await mergear_integrantes(usuarios, gasto.id_grupo);
+          let gasto_por_persona = gasto.monto / integrantes.length;
+          for (const integrante of integrantes) {
+              let grupo_usuario = await GrupoUsuario.findOne({
+                  where:{
+                      id_grupo: gasto.id_grupo,
+                      id_usuario: integrante.id
+                  }
+              });
+              if(!grupo_usuario){
+                  continue;
+              }
+              let nuevo_balance = (parseFloat(grupo_usuario.balance) + parseFloat(integrante.monto_pagado) - gasto_por_persona).toFixed(2);
+              grupo_usuario.balance = nuevo_balance;
+              await grupo_usuario.save();
+          }
+      }
+  
+      res.status(200).json({ mensaje: 'Gasto pagado correctamente' });
+    } catch (error) {
+      console.error('Error al pagar el gasto:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+}
+
 
 module.exports = {
     getGastosPropios,
     getGastosPropiosGrupos,
     getGastosGrupo,
+    postPagarGasto,
     post_gasto_casual,
     post_gasto_fijo,
     post_gasto_fijo_grupo,
