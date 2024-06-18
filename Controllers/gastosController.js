@@ -304,10 +304,13 @@ const post_gasto_casual_grupo = async (req, res) => {
         res.status(400).json({ error: 'No se ha proporcionado un grupo' });
         return
       }
-      if(!usuarios){
-          usuarios = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }];
+      let usuariosV = []
+      if(usuarios && usuarios.length > 0){
+        usuariosV = [...usuarios];
+      }else{
+        usuariosV = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }]
       }
-      let Objresp =calulos_y_validaciones(monto, usuarios, fecha, id_categoria, tags, id_grupo);
+      let Objresp =calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
       if(!Objresp.ok){
         res.status(400).json({ error: Objresp.mensaje });
         return
@@ -351,11 +354,14 @@ const post_gasto_fijo_grupo = async (req, res) => {
         return
       }
 
-      if(!usuarios){
-        usuarios = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }];
+      let usuariosV = []
+      if(usuarios && usuarios.length > 0){
+        usuariosV = [...usuarios];
+      }else{
+        usuariosV = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }]
       }
 
-      let Objresp = calulos_y_validaciones(monto, usuarios, fecha, id_categoria, tags, id_grupo);
+      let Objresp = calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
       if(!Objresp.ok){
           res.status(400).json({ error: Objresp.mensaje });
           return
