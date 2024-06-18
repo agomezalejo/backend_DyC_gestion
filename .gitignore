@@ -3,5 +3,5 @@ config
 data
 filesUploads
 logs
-backups
+backup
 scripts
