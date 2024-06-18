@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Usuarios = require('../models').Usuario;
-const env = process.env.NODE_ENV || 'development';
+const env = process.env.RAILWAY_ENVIRONMENT_NAME || process.env.NODE_ENV || 'development';
 const config = (env === 'development' || env === 'test') ? require(__dirname + '/../config/config.json')[env] : process.env;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
