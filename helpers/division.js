@@ -13,9 +13,9 @@ function minimizeDebts(balances) {
       maxDebt.balance += minAmount;
   
       transactions.push({
-        from: maxDebt.id_usuario,
-        to: maxCredit.id_usuario,
-        amount: minAmount
+        from: maxDebt.nombre_usuario,
+        to: maxCredit.nombre_usuario,
+        amount: minAmount.toFixed(2)
       });
     }
   

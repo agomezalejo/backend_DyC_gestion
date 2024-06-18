@@ -76,49 +76,47 @@ const createGrupo = async (req, res) => {
     }
   };
 
-const postSaldarDeuda = async (req, res) => {
+  const postSaldarDeuda = async (req, res) => {
     const { id } = req.params;
-
     try {
       const grupoUsuarios = await GrupoUsuario.findAll({
-        where: { id },
-        include: [{ model: Usuario, attributes: ['nombre_usuario'] }]
+        where: { id_grupo:id },
+        include: [{ model: Usuario, as: 'usuario', attributes: ['nombre_usuario'] }]
       });
-  
+
       if (!grupoUsuarios.length) {
         return res.status(404).json({ message: 'Grupo no encontrado o sin usuarios.' });
       }
-  
+
       let balances = grupoUsuarios.map(gu => ({
         id: gu.id,
         id_usuario: gu.id_usuario,
-        nombre_usuario: gu.Usuario.nombre_usuario,
+        nombre_usuario: gu.usuario.nombre_usuario, // Ajustar el acceso al alias correcto
         balance: parseFloat(gu.balance)
       }));
-  
+
       const transactions = minimizeDebts(balances);
-  
+
       for (let gu of grupoUsuarios) {
         await gu.update({ balance: 0 });
       }
-  
-      const transactionDetails = transactions.map(t => {
-        const fromUser = grupoUsuarios.find(gu => gu.id_usuario === t.from).Usuario.nombre_usuario;
-        const toUser = grupoUsuarios.find(gu => gu.id_usuario === t.to).Usuario.nombre_usuario;
-        return {
-          from: fromUser,
-          to: toUser,
-          amount: t.amount.toFixed(2)
-        };
-      });
-  
-      res.json({transacciones: transactionDetails});
+
+      // const transactionDetails = transactions.map(t => {
+      //   const fromUser = grupoUsuarios.find(gu => gu.id_usuario === t.from).usuario.nombre_usuario;
+      //   const toUser = grupoUsuarios.find(gu => gu.id_usuario === t.to).usuario.nombre_usuario;
+      //   return {
+      //     from: fromUser,
+      //     to: toUser,
+      //     amount: t.amount.toFixed(2)
+      //   };
+      // });
+
+      res.json({transacciones:transactions});
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Error interno del servidor.' });
     }
-
-  };
+};
 
 
 const updateGrupo = async (req, res) => {

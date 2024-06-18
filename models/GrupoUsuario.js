@@ -2,7 +2,14 @@
 const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-  class GrupoUsuario extends Model {}
+  class GrupoUsuario extends Model {
+    static associate(models) {
+      this.belongsTo(models.Usuario, {
+        foreignKey: 'id_usuario',
+        as: 'usuario'
+      });
+    }
+  }
 
   GrupoUsuario.init(
     {
