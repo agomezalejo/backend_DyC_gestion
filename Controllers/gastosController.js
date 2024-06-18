@@ -210,10 +210,12 @@ const post_gasto_casual = async (req, res) => {
     const { 
         nombre, descripcion, monto, fecha, id_categoria, tags,  //generales
         monto_pagado, metodo_pago, // para 1 solo usuario
+        saldado
     } = req.body;
     const usuarioActual = req.usuario;
     try {
-        let usuarios_gastos = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: metodo_pago.toUpperCase() }];
+        let monto_pago = saldado ? monto : 0;
+        let usuarios_gastos = [{ id: usuarioActual.id, monto_pagado: monto_pago, metodo_pago: 'EFECTIVO' }];
 
         let Objresp =calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags);
         if(!Objresp.ok){
@@ -247,11 +249,13 @@ const post_gasto_fijo = async (req, res) => {
         nombre, descripcion, monto, fecha, id_categoria, tags,  //generales
         monto_pagado, metodo_pago, // para 1 solo usuario
         frecuencia, // para fijos
+        saldado
     } = req.body;
     const usuarioActual = req.usuario;
 
     try {
-        let usuarios_gastos = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: metodo_pago.toUpperCase() }];
+        let monto_pago = saldado ? monto : 0;
+        let usuarios_gastos = [{ id: usuarioActual.id, monto_pagado: monto_pago, metodo_pago: 'EFECTIVO' }];
 
         let Objresp = calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags);
         if(!Objresp.ok){
@@ -287,25 +291,28 @@ const post_gasto_fijo = async (req, res) => {
 }
 
 const post_gasto_casual_grupo = async (req, res) => {
-  const id_grupo = req.params.idGrupo;
+  const id_grupo = req.params.idGrupo; 
   const { 
       nombre, descripcion, monto, fecha, id_categoria, tags,  //generales
-      usuarios // para grupos 
-  } = req.body;
+      usuarios, // para grupos 
+      saldado
+    } = req.body;
+  const usuarioActual = req.usuario;
   try {
+      let monto_pagado = saldado ? monto : 0;
       if(!id_grupo){
         res.status(400).json({ error: 'No se ha proporcionado un grupo' });
         return
       }
       if(!usuarios){
-          usuarios = [];
+          usuarios = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }];
       }
-      let Objresp =calulos_y_validaciones(monto, usuarios, fecha, id_categoria, tags);
+      let Objresp =calulos_y_validaciones(monto, usuarios, fecha, id_categoria, tags, id_grupo);
       if(!Objresp.ok){
         res.status(400).json({ error: Objresp.mensaje });
         return
       }
-      let {pagado, liquidacion, fechaDate, tagsValidated} = Objresp;
+      let {pagado, liquidacion, fechaDate, tagsValidated, integrantes} = Objresp;
 
       let constructor_gasto = {
         nombre,
@@ -319,7 +326,7 @@ const post_gasto_casual_grupo = async (req, res) => {
         id_grupo
       }
 
-      let nuevoGasto = await crear_gasto_casual(constructor_gasto, tagsValidated, usuarios)
+      let nuevoGasto = await crear_gasto_casual(constructor_gasto, tagsValidated, usuarios, integrantes)
   
       res.status(201).json({mensaje: "Gasto creado correctamente", gasto:nuevoGasto});
   } catch (error) {
@@ -333,26 +340,28 @@ const post_gasto_fijo_grupo = async (req, res) => {
   const { 
       nombre, descripcion, monto, fecha, id_categoria, tags,  //generales
       frecuencia, // para fijos
-      usuarios// para grupos 
-  } = req.body;
-
+      usuarios, // para grupos 
+      saldado
+    } = req.body;
+  const usuarioActual = req.usuario;
   try {
+      let monto_pagado = saldado ? monto : 0;
       if(!id_grupo){
         res.status(400).json({ error: 'No se ha proporcionado un grupo' });
         return
       }
 
       if(!usuarios){
-          usuarios = [];
+        usuarios = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }];
       }
 
-      let Objresp = calulos_y_validaciones(monto, usuarios, fecha, id_categoria, tags);
+      let Objresp = calulos_y_validaciones(monto, usuarios, fecha, id_categoria, tags, id_grupo);
       if(!Objresp.ok){
           res.status(400).json({ error: Objresp.mensaje });
           return
       }
 
-      let {pagado, liquidacion, fechaDate, tagsValidated} = Objresp;
+      let {pagado, liquidacion, fechaDate, tagsValidated, integrantes} = Objresp;
       let {unit_time, frecuencia_transformada} = tranformar_frecuencia(frecuencia);
 
       let proxima_fecha = moment(fechaDate).clone().add(1, unit_time).toDate();
@@ -364,7 +373,7 @@ const post_gasto_fijo_grupo = async (req, res) => {
 
       let constructor_fijo = { frecuencia:frecuencia_transformada, proxima_fecha }
 
-      let {fijo, nuevoGasto} = await crear_gasto_y_fijo(constructor_gasto, tagsValidated, constructor_fijo, usuarios)
+      let {fijo, nuevoGasto} = await crear_gasto_y_fijo(constructor_gasto, tagsValidated, constructor_fijo, usuarios, integrantes)
       let fechas_para_crear = calcular_proximos_fijos(proxima_fecha, unit_time)
 
       await crear_proximos_fijos(constructor_gasto, tagsValidated, fechas_para_crear, constructor_fijo, fijo, unit_time, [])
