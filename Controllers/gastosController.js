@@ -217,7 +217,7 @@ const post_gasto_casual = async (req, res) => {
         let monto_pago = saldado ? monto : 0;
         let usuarios_gastos = [{ id: usuarioActual.id, monto_pagado: monto_pago, metodo_pago: 'EFECTIVO' }];
 
-        let Objresp =calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags);
+        let Objresp = await calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags);
         if(!Objresp.ok){
           res.status(400).json({ error: Objresp.mensaje });
           return
@@ -257,7 +257,7 @@ const post_gasto_fijo = async (req, res) => {
         let monto_pago = saldado ? monto : 0;
         let usuarios_gastos = [{ id: usuarioActual.id, monto_pagado: monto_pago, metodo_pago: 'EFECTIVO' }];
 
-        let Objresp = calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags);
+        let Objresp = await calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags);
         if(!Objresp.ok){
           res.status(400).json({ error: Objresp.mensaje });
           return
