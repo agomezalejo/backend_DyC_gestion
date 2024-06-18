@@ -8,6 +8,7 @@ const {
   updateGrupo,
   deleteGrupo,
   addIntegranteByToken,
+  postSaldarDeuda
 } = require('../Controllers/gruposController');
 const authenticateToken = require('../middlewares/verificarToken');
 
@@ -21,6 +22,8 @@ router.get('/:id',[authenticateToken] , getGrupoById);
 router.post('/',[authenticateToken] , createGrupo);
 
 router.post('/addIntegrante/:token',[authenticateToken] , addIntegranteByToken);
+
+router.post('/:id/dividir',[authenticateToken] , postSaldarDeuda);
 
 router.put('/:id',[authenticateToken] , updateGrupo);
 
