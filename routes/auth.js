@@ -28,7 +28,6 @@ router.post('/login', async (req, res) => {
             usuario: objUsuario.nombre_usuario
         }
       };
-      console.log("llave?\n",SECRET_KEY)
       const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '7 days' });
 
       res.json({ ok:true, message: 'Inicio de sesión exitoso', token });
