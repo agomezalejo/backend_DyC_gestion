@@ -19,6 +19,10 @@ module.exports = (sequelize, DataTypes) => {
       id_usuario: {
         type: DataTypes.INTEGER,
         allowNull: false
+      },
+      balance: {
+        type: DataTypes.DECIMAL(12, 2),
+        defaultValue: 0
       }
     },
     {

@@ -3,8 +3,24 @@ const GastoUsuario = require("../models").GastoUsuario;
 const Categorias = require("../models").Categoria;
 const GastoFijo = require("../models").GastoFijo;
 const GastoTag = require("../models").GastoTag;
+const GrupoUsuario = require("../models").GrupoUsuario;
 const moment = require('moment');
 
+const mergear_integrantes = async(usuarios, id_grupo) => {
+    let integrantes = await traer_integrantes_de_grupo(id_grupo)
+    let integrantes_mergear = [...usuarios];
+    for (const integrante of integrantes) {
+        let usuario = integrantes_mergear.find(usuario => usuario.id === integrante.id);
+        if(!usuario){
+            integrantes_mergear.push({
+                id: integrante.id,
+                monto_pagado: 0,
+                metodo_pago: null
+            });
+        }
+    }
+    return integrantes_mergear;
+}
 
 
 const calcular_liquidacion = (usuarios, monto) => {
@@ -19,9 +35,14 @@ const calcular_liquidacion = (usuarios, monto) => {
     return {ok: true, liquidacion, pagado};
 }
 
-const calulos_y_validaciones = (monto, usuarios, fecha, id_categoria, tags) => {
+const calulos_y_validaciones = (monto, usuarios, fecha, id_categoria, tags, id_grupo=null) => {
     
     let ok = true;
+
+    let integrantes = [] 
+    if(id_grupo){
+        integrantes = mergear_integrantes(usuarios, id_grupo);
+    }
     
     let resp = calcular_liquidacion(usuarios, monto);
     if(!resp.ok){
@@ -58,7 +79,7 @@ const calulos_y_validaciones = (monto, usuarios, fecha, id_categoria, tags) => {
         tags = [];
     }
 
-    return {ok, pagado, liquidacion, fechaDate, tagsValidated:tags};
+    return {ok, pagado, liquidacion, fechaDate, tagsValidated:tags, integrantes};
 }
 
 const tranformar_frecuencia = (frecuencia) => {
@@ -96,7 +117,7 @@ const calcular_proximos_fijos = (proxima_fecha, unit_time) => {
 }
 
 
-const crear_gasto_casual = async (constructor_gasto, tags, usuarios_gastos) => {
+const crear_gasto_casual = async (constructor_gasto, tags, usuarios_gastos, integrantes=[]) => {
     const nuevoGasto = await Gastos.create(constructor_gasto);
 
     for (const tag of tags) {
@@ -115,11 +136,26 @@ const crear_gasto_casual = async (constructor_gasto, tags, usuarios_gastos) => {
         });
     }
 
+    if(nuevoGasto.liquidacion === 'PAGADO' && nuevoGasto.id_grupo){
+        let gasto_por_persona = nuevoGasto.monto / integrantes.length;
+        for (const integrante of integrantes) {
+            let grupo_usuario = await GrupoUsuario.findOne({
+                where:{
+                    id_grupo: nuevoGasto.id_grupo,
+                    id_usuario: integrante.id
+                }
+            });
+            grupo_usuario.balance += integrante.monto_pagado - gasto_por_persona;
+            await grupo_usuario.save();
+        }
+    }
+
+
     return nuevoGasto;
 }
 
 
-const crear_gasto_y_fijo = async (constructor_gasto, tags, constructor_fijo, usuarios_gastos) => {
+const crear_gasto_y_fijo = async (constructor_gasto, tags, constructor_fijo, usuarios_gastos, integrantes=[]) => {
     const nuevoGasto = await Gastos.create(constructor_gasto);
 
     for (const tag of tags) {
@@ -142,6 +178,32 @@ const crear_gasto_y_fijo = async (constructor_gasto, tags, constructor_fijo, usu
         monto_pagado: usuario.monto_pagado,
         metodo_pago: usuario.metodo_pago
         });
+
+        if(nuevoGasto.liquidacion === 'PAGADO' && nuevoGasto.id_grupo){
+            let grupo_usuario = await GrupoUsuario.findOne({
+                where:{
+                    id_grupo: nuevoGasto.id_grupo,
+                    id_usuario: usuario.id
+                }
+            });
+            grupo_usuario.balance -= usuario.monto_pagado;
+            await grupo_usuario.save();
+        }
+
+    }
+
+    if(nuevoGasto.liquidacion === 'PAGADO' && nuevoGasto.id_grupo){
+        let gasto_por_persona = nuevoGasto.monto / integrantes.length;
+        for (const integrante of integrantes) {
+            let grupo_usuario = await GrupoUsuario.findOne({
+                where:{
+                    id_grupo: nuevoGasto.id_grupo,
+                    id_usuario: integrante.id
+                }
+            });
+            grupo_usuario.balance += integrante.monto_pagado - gasto_por_persona;
+            await grupo_usuario.save();
+        }
     }
 
     return {fijo, nuevoGasto};
