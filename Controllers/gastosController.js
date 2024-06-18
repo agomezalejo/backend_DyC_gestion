@@ -19,9 +19,8 @@ const getGastosPropios = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
-  
-    const inicio = req.query.inicio ? moment(req.query.inicio).startOf('day') : moment().startOf('month');
-    const fin = req.query.fin ? moment(req.query.fin).endOf('day') : moment().endOf('month');
+    const inicio = req.query.inicio ? moment(req.query.inicio, "DD/MM/YYYY").startOf('day') : moment().startOf('month');
+    const fin = req.query.fin ? moment(req.query.fin, "DD/MM/YYYY").endOf('day') : moment().endOf('month');
   
     try {
       const { count, rows } = await Gastos.findAndCountAll({
@@ -220,7 +219,7 @@ const post_gasto_casual = async (req, res) => {
         let monto_pago = saldado ? monto : 0;
         let usuarios_gastos = [{ id: usuarioActual.id, monto_pagado: monto_pago, metodo_pago: 'EFECTIVO' }];
 
-        let Objresp = await calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags);
+        let Objresp = await calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags, tipo='CASUAL');
         if(!Objresp.ok){
           res.status(400).json({ error: Objresp.mensaje });
           return
@@ -260,7 +259,7 @@ const post_gasto_fijo = async (req, res) => {
         let monto_pago = saldado ? monto : 0;
         let usuarios_gastos = [{ id: usuarioActual.id, monto_pagado: monto_pago, metodo_pago: 'EFECTIVO' }];
 
-        let Objresp = await calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags);
+        let Objresp = await calulos_y_validaciones(monto, usuarios_gastos, fecha, id_categoria, tags, tipo='FIJO');
         if(!Objresp.ok){
           res.status(400).json({ error: Objresp.mensaje });
           return
@@ -315,7 +314,7 @@ const post_gasto_casual_grupo = async (req, res) => {
           usuariosV = [{ id: usuarioActual.id, monto_pagado: monto_pagado, metodo_pago: 'EFECTIVO' }]
         }
       }
-      let Objresp =await calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
+      let Objresp =await calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, tipo='CASUAL', id_grupo);
       if(!Objresp.ok){
         res.status(400).json({ error: Objresp.mensaje });
         return
@@ -368,7 +367,7 @@ const post_gasto_fijo_grupo = async (req, res) => {
         }
       }
 
-      let Objresp = await calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, id_grupo);
+      let Objresp = await calulos_y_validaciones(monto, usuariosV, fecha, id_categoria, tags, tipo='FIJO', id_grupo);
       if(!Objresp.ok){
           res.status(400).json({ error: Objresp.mensaje });
           return

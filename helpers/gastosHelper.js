@@ -36,7 +36,7 @@ const calcular_liquidacion = (usuarios, monto) => {
     return {ok: true, liquidacion, pagado};
 }
 
-const calulos_y_validaciones = async(monto, usuarios, fecha, id_categoria, tags, id_grupo=null) => {
+const calulos_y_validaciones = async(monto, usuarios, fecha, id_categoria, tags, tipo, id_grupo=null) => {
     
     let ok = true;
 
@@ -54,7 +54,7 @@ const calulos_y_validaciones = async(monto, usuarios, fecha, id_categoria, tags,
     let fechaMoment = moment(fecha, "DD/MM/YYYY");
 
     const fechaLimite = moment().clone().subtract(27, 'days');
-    if (!fechaMoment.isSameOrAfter(fechaLimite)) {
+    if (tipo == 'FIJO' && !fechaMoment.isSameOrAfter(fechaLimite)) {
         return {ok: false, mensaje:'Para crear un gasto fijo, la fecha debe ser igual o mayor que la fecha actual menos 27 días'};
     }
 
