@@ -112,7 +112,7 @@ const postSaldarDeuda = async (req, res) => {
         };
       });
   
-      res.json(transactionDetails);
+      res.json({transacciones: transactionDetails});
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Error interno del servidor.' });
