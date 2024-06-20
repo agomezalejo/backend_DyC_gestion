@@ -3,7 +3,8 @@ const Usuario = require('../models').Usuario;
 const GrupoUsuario = require('../models').GrupoUsuario;
 const crypto = require('crypto');
 const { minimizeDebts } = require('../helpers/division');
-
+const sequelize = require('sequelize');
+const Op = sequelize.Op;
 
 const getAllGrupos = async (req, res) => {
   try {
@@ -101,16 +102,6 @@ const createGrupo = async (req, res) => {
         await gu.update({ balance: 0 });
       }
 
-      // const transactionDetails = transactions.map(t => {
-      //   const fromUser = grupoUsuarios.find(gu => gu.id_usuario === t.from).usuario.nombre_usuario;
-      //   const toUser = grupoUsuarios.find(gu => gu.id_usuario === t.to).usuario.nombre_usuario;
-      //   return {
-      //     from: fromUser,
-      //     to: toUser,
-      //     amount: t.amount.toFixed(2)
-      //   };
-      // });
-
       res.json({transacciones:transactions});
     } catch (error) {
       console.error(error);
@@ -177,6 +168,48 @@ const addIntegranteByToken = async (req, res) => {
     }
   };
 
+  const removeIntegranteByIdGrupo = async (req, res) => {
+    const { idGrupo } = req.params;
+    const idUsuario = req.usuario.id;
+    
+    try {
+        const grupo = await Grupo.findByPk(idGrupo);
+        if (!grupo) {
+            return res.status(404).json({ error: 'Grupo no encontrado' });
+        }
+
+        const relacion = await GrupoUsuario.findOne({ where: { id_grupo: idGrupo, id_usuario: idUsuario } });
+        if (!relacion) {
+            return res.status(404).json({ error: 'Usuario no pertenece al grupo' });
+        }
+
+        const balanceUsuario = relacion.balance;
+
+        const otrosIntegrantes = await GrupoUsuario.findAll({ 
+            where: { id_grupo: idGrupo, id_usuario: { [Op.ne]: idUsuario } } 
+        });
+
+        if (otrosIntegrantes.length > 0) {
+            const balanceRedistribuido = balanceUsuario / otrosIntegrantes.length;
+
+            for (const integrante of otrosIntegrantes) {
+                integrante.balance = parseFloat(integrante.balance) + balanceRedistribuido;
+                if(Math.abs(integrante.balance) < 0.01){
+                    integrante.balance = 0;
+                }
+                await integrante.save();
+            }
+        }
+
+        await GrupoUsuario.destroy({ where: { id_grupo: idGrupo, id_usuario: idUsuario } });
+
+        res.status(200).json({ message: 'Usuario removido del grupo y balance redistribuido correctamente' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al remover el usuario del grupo' });
+    }
+};
+
 const deleteGrupo = async (req, res) => {
     const { id } = req.params;
     try {
@@ -206,6 +239,7 @@ module.exports = {
   createGrupo,
   postSaldarDeuda,
   addIntegranteByToken,
+  removeIntegranteByIdGrupo,
   updateGrupo,
   deleteGrupo,
 };
